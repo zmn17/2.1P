@@ -12,19 +12,13 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {
-  res.sendFile(__dirname + "./public/index.html");
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.post("/", (req, res) => {
-  const userEmail = req.body.email;
-});
-
-// Create a transporter object
+// Create a transporter object with OAuth2
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_ADDRESS,
-    pass: process.env.EMAIL_PASS,
     type: "OAuth2",
     user: process.env.EMAIL_ADDRESS,
     clientId: process.env.CLIENT_ID,
@@ -33,23 +27,41 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Define the email options
-const mailOptions = {
-  from: process.env.EMAIL_ADDRESS,
-  to: "",
-  subject: "Welcome ",
-  text: "This is a test",
-};
+app.post("/", async (req, res) => {
+  const userEmail = req.body.email;
 
-// Send the email
-transporter.sendMail(mailOptions, (error, info) => {
-  if (error) {
-    console.log(error);
-  } else {
-    console.log("Email send: " + info.response);
+  try {
+    await sendEmailToSubscribers(userEmail);
+    res.status(200).json({ message: "Subscribed successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Subscription failed. Try again!" });
   }
 });
 
-app.listen(process.env.PORT | 8000, () => {
-  console.log("Server is running on port 8000");
+const sendEmailToSubscribers = async (user_email) => {
+  // Define the email options
+  const mailOptions = {
+    from: process.env.EMAIL_ADDRESS,
+    to: user_email,
+    subject: "Welcome to DEV@Deakin",
+    text: "We're excited to have you on board. At Deakin, we strive to provide the best experience possible, and we are confident that you'll love what we have to offer.",
+  };
+
+  // Send the email
+  return new Promise((resolve, reject) => {
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.log(error);
+        reject(error);
+      } else {
+        console.log("Email sent: " + info.response);
+        resolve(info);
+      }
+    });
+  });
+};
+
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });

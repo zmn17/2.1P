@@ -7,14 +7,53 @@
     <link href="./css/style.css" rel="stylesheet" />
   </head>
   <body>
-    <form method="post" action="/">
+    <form method="post" action="/" id="form">
       <div id="container">
         <p>SIGN UP FOR OUR DAILY INSIDER</p>
-        <input type="email" name="email" placeholder="Enter your email" />
-        <div>
-          <button type="submit">Subscribe</button>
-        </div>
+        <input
+          type="email"
+          name="email"
+          id="email"
+          placeholder="Enter your email"
+        />
+        <button type="submit">Subscribe</button>
       </div>
+
+      <div id="responseMessage"></div>
     </form>
+    <script>
+      document
+        .getElementById("form")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const email = document.getElementById("email").value;
+
+          const responseMessage = document.getElementById("responseMessage");
+          responseMessage.textContent = "";
+
+          try {
+            const response = await fetch("/", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ email }),
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+              responseMessage.textContent = result.message;
+              responseMessage.style.color = "green";
+            } else {
+              responseMessage.textContent = result.message;
+              responseMessage.style.color = "red";
+            }
+          } catch (err) {
+            responseMessage.textContent = "Error susbcribing. Try again.";
+            responseMessage.style.color = "red";
+          }
+        });
+    </script>
   </body>
 </html>
